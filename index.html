@@ -60,7 +60,10 @@
   .after{font-size:13px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums}
   .row.next .tag{font-size:20px;font-weight:700;color:var(--nextink);background:rgba(0,0,0,.25);border:.5px solid var(--nextline);border-radius:99px;padding:4px 14px;white-space:nowrap;text-align:center}
   .row.next .tag .after{display:block;font-size:12px;margin-top:1px;color:var(--nextink)}
+  .row.leg2{border-top:none;padding-top:2px}
   .row.past{opacity:.42}
+  .notice{flex-shrink:0;text-align:center;font-size:13px;font-weight:600;color:var(--xfer);
+    background:var(--xferbg);border:1px solid var(--xfer);border-radius:8px;padding:6px 10px;margin:0 0 8px}
   .foot{flex-shrink:0;margin-top:13px;padding:0 4px;font-size:11px;color:var(--hint);line-height:1.7}
   .navbtn{display:block;width:100%;margin:0 0 10px;font-size:21px;font-weight:700;color:var(--grn);
     background:var(--grnbg);border:1px solid var(--grn);border-radius:10px;padding:10px 14px}
@@ -80,6 +83,7 @@
       <button id="gpsBtn">現在地</button>
       <button id="dayBtn">平日</button>
     </div>
+    <div id="notice" class="notice" style="display:none"></div>
   </div>
   <div class="card" id="list"></div>
   <div class="foot">
@@ -137,13 +141,22 @@ function getJourneys(day){
   for(var i=0;i<leg1.length;i++){
     var ready=toMin(leg1[i].arr)+TMIN,nx=null;
     for(var j=0;j<leg2.length;j++){var dd=toMin(leg2[j].dep);if(dd>=ready&&dd-ready<=MAXWAIT){nx=leg2[j];break;}}
-    if(nx)res.push({transfer:true,lineB:lB,dep:leg1[i].dep,arr1:leg1[i].arr,dep2:nx.dep,arr:nx.arr,dest2:nx.dest});
+    if(nx)res.push({transfer:true,lineB:lB,dest1:leg1[i].dest,dep:leg1[i].dep,arr1:leg1[i].arr,dep2:nx.dep,arr:nx.arr,dest2:nx.dest});
   }
   res.sort(function(x,y){return toMin(x.dep)-toMin(y.dep);});return res;
 }
 
 var THRU={"新田辺":1,"近鉄奈良":1,"びわ湖浜大津":1,"四宮":1};
 function fmtAfter(depSec,nowSec){var a=Math.round((depSec-nowSec)/60);return a<0?'':(a===0?'まもなく':a+'分後');}
+function wrapd(x){return x<0?x+1440:x;}
+function badgeD(dest){return '<span class="b '+(THRU[dest]?'bk':'bg')+'">'+dest+'<span class="sfx">行</span></span>';}
+function rowD(cls,id,badge,dep,arr,dur,center){
+  return '<div class="row'+cls+'"'+(id?' id="nextt"':'')+'>'
+    +'<div class="rmain">'+badge
+    +'<span class="time"><b>'+dep+'</b><span class="to">→</span><b class="arr">'+arr+'</b></span>'
+    +(center?'<span class="tagwrap">'+center+'</span>':'')
+    +'<span class="right"><span class="dur">'+dur+'分</span></span></div></div>';
+}
 
 function render(recenter){
   if(!DATA||!FROM||!TO)return;
@@ -158,34 +171,31 @@ function render(recenter){
   var walkMin=(FROM===NEAREST&&walkNear!=null)?walkNear:0,LEAD=5;
   var needSec=nowSec+walkMin*60+LEAD;
   var targetSec=showNext?needSec:nowSec;
+  // 乗換案内（時刻表欄の上に1行）
+  var laF=lineOf(FROM),laT=lineOf(TO),common=laF.filter(function(l){return laT.indexOf(l)>=0;});
+  var isXfer=FROM&&TO&&FROM!==TO&&!common.length;
+  var nt=document.getElementById('notice');
+  nt.textContent=isXfer?(DATA.transfer+'で'+laT[0]+'にのりかえ'):'';
+  nt.style.display=isXfer?'block':'none';
   var js=getJourneys(DAYSEL);
   js.forEach(function(j){
-    var dep=j.dep,arr=j.arr,depSec=toMin(dep)*60;
+    var depSec=toMin(j.dep)*60;
     var atOrAfter=depSec>=targetSec,idx=atOrAfter?upCount++:-1;
-    var isTarget=idx===0;
-    var hl=showNext&&isTarget;
+    var isTarget=idx===0,hl=showNext&&isTarget;
     if(hl)NEXTAT=depSec-walkMin*60-LEAD;
     var dim=showNext&&depSec<targetSec;
     var showAfter=showNext&&depSec>=nowSec&&(!atOrAfter||idx<3);
-    var dur=toMin(arr)-toMin(dep);if(dur<0)dur+=1440;
-    var badge,sub='';
-    if(j.transfer){
-      var wait=toMin(j.dep2)-toMin(j.arr1);if(wait<0)wait+=1440;
-      badge='<span class="b bt">乗換</span>';
-      sub='<div class="sub">'+DATA.transfer+'で'+j.lineB+'にのりかえ（'+j.arr1+'着→'+j.dep2+'発・待'+wait+'分）</div>';
-    }else{
-      var thru=THRU[j.dest];
-      badge='<span class="b '+(thru?'bk':'bg')+'">'+j.dest+'<span class="sfx">行</span></span>';
-    }
     var center=hl?('<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span>')
                :(showAfter?('<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span>'):'');
-    html+='<div class="row'+(hl?' next':'')+(dim?' past':'')+'"'+(isTarget?' id="nextt"':'')+'>'
-      +'<div class="rmain">'+badge
-      +'<span class="time"><b>'+dep+'</b><span class="to">→</span><b class="arr">'+arr+'</b></span>'
-      +(center?'<span class="tagwrap">'+center+'</span>':'')
-      +'<span class="right"><span class="dur">'+dur+'分</span></span></div>'+sub+'</div>';
+    var base=(hl?' next':'')+(dim?' past':'');
+    if(!j.transfer){
+      html+=rowD(base,isTarget,badgeD(j.dest),j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center);
+    }else{  // 乗換: 2レグを2行で
+      html+=rowD(base,isTarget,badgeD(j.dest1),j.dep,j.arr1,wrapd(toMin(j.arr1)-toMin(j.dep)),center);
+      html+=rowD(base+' leg2',false,badgeD(j.dest2),j.dep2,j.arr,wrapd(toMin(j.arr)-toMin(j.dep2)),'');
+    }
   });
-  if(!js.length)html='<div class="row"><div class="rmain">'+(FROM===TO?'出発駅と到着駅が同じです。':'この区間の列車がありません。')+'</div></div>';
+  if(!js.length){nt.style.display='none';html='<div class="row"><div class="rmain">'+(FROM===TO?'出発駅と到着駅が同じです。':'この区間の列車がありません。')+'</div></div>';}
   var list=document.getElementById('list'),sc=list.scrollTop;list.innerHTML=html;
   if(recenter===false)list.scrollTop=sc;else centerNext();
 }
