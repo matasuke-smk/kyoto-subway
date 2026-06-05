@@ -100,7 +100,14 @@
     background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><path d='M1 3l5 5 5-5' stroke='%233fcca1' stroke-width='2' fill='none'/></svg>");
     background-repeat:no-repeat;background-position:right 6px center}
   .cfgNote{font-size:11px;color:var(--hint);padding:8px 4px 2px;line-height:1.5}
+  .cfgSection{font-size:12px;font-weight:700;color:var(--grn);padding:10px 4px 2px;letter-spacing:.05em}
   .cfgClear{font-size:13px;font-weight:600;color:var(--toz);background:none;border:1px solid var(--toz);border-radius:8px;padding:6px 14px;margin:10px auto 0;display:block}
+  .toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+  .toggle input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:var(--bg);border:1px solid var(--line);border-radius:99px;transition:.2s}
+  .slider::before{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;background:var(--sub);border-radius:50%;transition:.2s}
+  .toggle input:checked+.slider{background:var(--grnbg);border-color:var(--grn)}
+  .toggle input:checked+.slider::before{transform:translateX(20px);background:var(--grn)}
 </style>
 </head>
 <body>
@@ -138,9 +145,15 @@
 <div id="cfgModal" class="modal" hidden>
   <div class="modalCard">
     <div class="modalHd"><span id="cfgTitle">設定</span><button id="cfgClose">✕</button></div>
-    <div class="cfgRow"><span class="cfgLabel">デフォルト出発駅</span><select class="cfgSel" id="cfgFrom"></select></div>
-    <div class="cfgRow"><span class="cfgLabel">デフォルト到着駅</span><select class="cfgSel" id="cfgTo"></select></div>
-    <div class="cfgNote">GPS が取得できないとき、またはアプリ起動時にこの駅が選択されます。</div>
+    <div class="cfgSection">平日</div>
+    <div class="cfgRow"><span class="cfgLabel">出発駅</span><select class="cfgSel" id="cfgWdFrom"></select></div>
+    <div class="cfgRow"><span class="cfgLabel">到着駅</span><select class="cfgSel" id="cfgWdTo"></select></div>
+    <div class="cfgRow"><span class="cfgLabel">午前/午後で入れ替え</span><label class="toggle"><input type="checkbox" id="cfgWdSwap"><span class="slider"></span></label></div>
+    <div class="cfgSection">休日</div>
+    <div class="cfgRow"><span class="cfgLabel">出発駅</span><select class="cfgSel" id="cfgHdFrom"></select></div>
+    <div class="cfgRow"><span class="cfgLabel">到着駅</span><select class="cfgSel" id="cfgHdTo"></select></div>
+    <div class="cfgRow"><span class="cfgLabel">午前/午後で入れ替え</span><label class="toggle"><input type="checkbox" id="cfgHdSwap"><span class="slider"></span></label></div>
+    <div class="cfgNote">GPS が取得できないとき、アプリ起動時にこの駅が選択されます。午前/午後入れ替えをオンにすると、午後は出発駅と到着駅が逆になります。</div>
     <button class="cfgClear" id="cfgClear">設定をリセット</button>
   </div>
 </div>
@@ -290,8 +303,13 @@ function defaultTo(from){
   return tt===from?(from===hi?lo:hi):tt;
 }
 function fallback(){
-  var sf=localStorage.getItem('defaultFrom'),st=localStorage.getItem('defaultTo');
-  if(sf&&DATA&&DATA.coords[sf]){FROM=sf;TO=(st&&st!==sf&&DATA.coords[st])?st:defaultTo(sf);return;}
+  var day=todayType(),pre=day==='holiday'?'cfg_holiday_':'cfg_weekday_';
+  var sf=localStorage.getItem(pre+'from'),st=localStorage.getItem(pre+'to');
+  var swap=localStorage.getItem(pre+'swap')==='1'&&new Date().getHours()>=12;
+  if(sf&&DATA&&DATA.coords[sf]){
+    var f=swap?st:sf, t=swap?sf:st;
+    if(f&&DATA.coords[f]){FROM=f;TO=(t&&t!==f&&DATA.coords[t])?t:defaultTo(f);return;}
+  }
   var am=new Date().getHours()<12;FROM=am?'国際会館':'竹田';TO=am?'竹田':'国際会館';
 }
 
@@ -361,15 +379,23 @@ function pickStation(s){
     // 設定モーダル
     (function(){
       var allSt=[];Object.keys(DATA.order).forEach(function(ln){DATA.order[ln].forEach(function(s){if(allSt.indexOf(s)<0)allSt.push(s);});});
-      function fillSel(id){var el=document.getElementById(id),sv=localStorage.getItem(id==='cfgFrom'?'defaultFrom':'defaultTo')||'';
+      var selMap={cfgWdFrom:'cfg_weekday_from',cfgWdTo:'cfg_weekday_to',cfgHdFrom:'cfg_holiday_from',cfgHdTo:'cfg_holiday_to'};
+      function fillSel(id){var el=document.getElementById(id),sv=localStorage.getItem(selMap[id])||'';
         el.innerHTML='<option value="">未設定</option>';allSt.forEach(function(s){el.innerHTML+='<option value="'+s+'"'+(s===sv?' selected':'')+'>'+s+'</option>';});}
-      fillSel('cfgFrom');fillSel('cfgTo');
-      document.getElementById('cfgBtn').addEventListener('click',function(){fillSel('cfgFrom');fillSel('cfgTo');document.getElementById('cfgModal').hidden=false;});
+      var swapMap={cfgWdSwap:'cfg_weekday_swap',cfgHdSwap:'cfg_holiday_swap'};
+      function fillAll(){Object.keys(selMap).forEach(fillSel);Object.keys(swapMap).forEach(function(id){document.getElementById(id).checked=localStorage.getItem(swapMap[id])==='1';});}
+      fillAll();
+      document.getElementById('cfgBtn').addEventListener('click',function(){fillAll();document.getElementById('cfgModal').hidden=false;});
       document.getElementById('cfgClose').addEventListener('click',function(){document.getElementById('cfgModal').hidden=true;});
       document.getElementById('cfgModal').addEventListener('click',function(e){if(e.target.id==='cfgModal')document.getElementById('cfgModal').hidden=true;});
-      document.getElementById('cfgFrom').addEventListener('change',function(){var v=this.value;if(v)localStorage.setItem('defaultFrom',v);else localStorage.removeItem('defaultFrom');});
-      document.getElementById('cfgTo').addEventListener('change',function(){var v=this.value;if(v)localStorage.setItem('defaultTo',v);else localStorage.removeItem('defaultTo');});
-      document.getElementById('cfgClear').addEventListener('click',function(){localStorage.removeItem('defaultFrom');localStorage.removeItem('defaultTo');fillSel('cfgFrom');fillSel('cfgTo');});
+      Object.keys(selMap).forEach(function(id){document.getElementById(id).addEventListener('change',function(){var v=this.value;if(v)localStorage.setItem(selMap[id],v);else localStorage.removeItem(selMap[id]);});});
+      Object.keys(swapMap).forEach(function(id){document.getElementById(id).addEventListener('change',function(){localStorage.setItem(swapMap[id],this.checked?'1':'0');});});
+      document.getElementById('cfgClear').addEventListener('click',function(){Object.keys(selMap).forEach(function(id){localStorage.removeItem(selMap[id]);});Object.keys(swapMap).forEach(function(id){localStorage.removeItem(swapMap[id]);});fillAll();});
+      // 旧キーを移行
+      var oldF=localStorage.getItem('defaultFrom'),oldT=localStorage.getItem('defaultTo'),oldS=localStorage.getItem('cfg_swap_ampm');
+      if(oldF){localStorage.setItem('cfg_weekday_from',oldF);localStorage.removeItem('defaultFrom');}
+      if(oldT){localStorage.setItem('cfg_weekday_to',oldT);localStorage.removeItem('defaultTo');}
+      if(oldS){localStorage.setItem('cfg_weekday_swap',oldS);localStorage.removeItem('cfg_swap_ampm');}
     })();
     DAYSEL=todayType();
     refresh();
