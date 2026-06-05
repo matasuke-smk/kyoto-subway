@@ -224,8 +224,8 @@ function render(recenter){
       if(exp){
         inner=lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr1,wrapd(toMin(j.arr1)-toMin(j.dep)),center)
              +lineRmain(badgeD(j.dest2,j.lineB),j.dep2,j.arr,wrapd(toMin(j.arr)-toMin(j.dep2)),'','leg2line');
-      }else{
-        inner=lineRmain('<span class="bsp"></span>',j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center);
+      }else{  // 1行表示: 出発駅で乗る電車(leg1)の行先を表示
+        inner=lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center);
       }
       html+='<div class="row'+base+'" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'+inner+'</div>';
     }
@@ -237,6 +237,7 @@ function render(recenter){
 function centerNext(){
   var list=document.getElementById('list'),nb=document.getElementById('nextt');
   if(!list||!nb)return;
+  if(nb.scrollIntoView){try{nb.scrollIntoView({block:'center'});return;}catch(e){}}
   list.scrollTop=Math.max(0,nb.offsetTop-(list.clientHeight-nb.offsetHeight)/2);
 }
 function isAtDefault(){

@@ -1,4 +1,4 @@
-const CACHE = 'kyoto-subway-v4';
+const CACHE = 'kyoto-subway-v5';
 const ASSETS = [
   './',
   './index.html',
