@@ -82,30 +82,31 @@
   .modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.66);display:flex;align-items:center;justify-content:center;padding:14px}
   .modal[hidden]{display:none}
   .modalCard{width:100%;max-width:460px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-  .modalHd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  #modalTitle{font-size:15px;font-weight:700}
-  #modalClose,#cfgClose{background:none;border:0;color:var(--sub);font-size:18px;padding:4px 8px}
-  .cols{display:flex;gap:8px}
-  .col{flex:1;min-width:0}
-  .colHd{text-align:center;font-size:12px;font-weight:700;padding:3px 0;border-bottom:1px solid var(--line);margin-bottom:4px}
+  #modal{background:var(--bg);padding:0}
+  #modal .modalCard{max-width:100%;max-height:100%;height:100%;border-radius:0;border:none;
+    display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) 16px 14px}
+  .modalHd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0}
+  #modalTitle{font-size:17px;font-weight:700}
+  #modalClose,#cfgClose{background:none;border:0;color:var(--sub);font-size:20px;padding:4px 8px}
+  .cols{display:flex;gap:10px;flex:1;min-height:0;overflow:hidden}
+  .col{flex:1;min-width:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .colHd{text-align:center;font-size:13px;font-weight:700;padding:6px 0;border-bottom:1px solid var(--line);margin-bottom:6px;position:sticky;top:0;background:var(--card);z-index:1}
   .colHd.k{color:var(--grn)} .colHd.t{color:var(--toz)}
-  .stitem{display:block;width:100%;text-align:center;font-size:13px;font-weight:600;color:var(--ink);
-    background:#222226;border:1px solid var(--line);border-radius:7px;padding:5px 4px;margin-bottom:3px;white-space:nowrap;overflow:hidden}
+  .stitem{display:block;width:100%;text-align:center;font-size:15px;font-weight:600;color:var(--ink);
+    background:#222226;border:1px solid var(--line);border-radius:8px;padding:10px 4px;margin-bottom:5px;white-space:nowrap;overflow:hidden}
   .meta{font-size:11px;color:var(--hint);margin:2px 0 0;text-align:center}
   #cfgModal .modalCard{padding:16px 18px 20px}
   #cfgModal .modalHd{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
   #cfgTitle{font-size:16px;font-weight:700}
-  .cfgSection{font-size:11px;font-weight:700;color:var(--grn);text-transform:uppercase;letter-spacing:.08em;
-    padding:14px 0 6px;margin-top:4px;border-top:1px solid var(--line)}
-  .cfgSection:first-of-type{border-top:none;margin-top:0;padding-top:4px}
-  .cfgRow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;gap:12px}
+  .cfgGroup{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 14px;margin-bottom:12px}
+  .cfgGroup:last-of-type{margin-bottom:0}
+  .cfgSection{font-size:14px;font-weight:700;color:var(--ink);padding:12px 0 4px}
+  .cfgRow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;gap:12px;border-top:1px solid var(--line)}
+  .cfgRow:first-child{border-top:none}
   .cfgLabel{font-size:13px;font-weight:500;color:var(--sub)}
-  .cfgSel{font-size:14px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;
-    padding:7px 28px 7px 10px;min-width:120px;
-    -webkit-appearance:none;appearance:none;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><path d='M1 3l4 4 4-4' stroke='%239b9a96' stroke-width='1.5' fill='none'/></svg>");
-    background-repeat:no-repeat;background-position:right 9px center}
-  .cfgSel:focus{border-color:var(--grn);outline:none}
+  .cfgStBtn{font-size:14px;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;
+    padding:7px 12px;min-width:100px;text-align:center;white-space:nowrap}
+  .cfgStBtn.empty{color:var(--hint)}
   .cfgNote{font-size:11px;color:var(--hint);padding:14px 0 4px;line-height:1.6;border-top:1px solid var(--line);margin-top:10px}
   .cfgClear{font-size:13px;font-weight:600;color:var(--toz);background:var(--tozbg);border:1px solid var(--toz);
     border-radius:8px;padding:8px 18px;margin:14px auto 0;display:block;transition:.15s}
@@ -152,14 +153,18 @@
 <div id="cfgModal" class="modal" hidden>
   <div class="modalCard">
     <div class="modalHd"><span id="cfgTitle">設定</span><button id="cfgClose">✕</button></div>
-    <div class="cfgSection">平日</div>
-    <div class="cfgRow"><span class="cfgLabel">出発駅</span><select class="cfgSel" id="cfgWdFrom"></select></div>
-    <div class="cfgRow"><span class="cfgLabel">到着駅</span><select class="cfgSel" id="cfgWdTo"></select></div>
-    <div class="cfgRow"><span class="cfgLabel">午前/午後で入れ替え</span><label class="toggle"><input type="checkbox" id="cfgWdSwap"><span class="slider"></span></label></div>
-    <div class="cfgSection">休日</div>
-    <div class="cfgRow"><span class="cfgLabel">出発駅</span><select class="cfgSel" id="cfgHdFrom"></select></div>
-    <div class="cfgRow"><span class="cfgLabel">到着駅</span><select class="cfgSel" id="cfgHdTo"></select></div>
-    <div class="cfgRow"><span class="cfgLabel">午前/午後で入れ替え</span><label class="toggle"><input type="checkbox" id="cfgHdSwap"><span class="slider"></span></label></div>
+    <div class="cfgGroup">
+      <div class="cfgSection">平日</div>
+      <div class="cfgRow"><span class="cfgLabel">出発駅</span><button class="cfgStBtn" id="cfgWdFrom">未設定</button></div>
+      <div class="cfgRow"><span class="cfgLabel">到着駅</span><button class="cfgStBtn" id="cfgWdTo">未設定</button></div>
+      <div class="cfgRow"><span class="cfgLabel">午前/午後で入れ替え</span><label class="toggle"><input type="checkbox" id="cfgWdSwap"><span class="slider"></span></label></div>
+    </div>
+    <div class="cfgGroup">
+      <div class="cfgSection">休日</div>
+      <div class="cfgRow"><span class="cfgLabel">出発駅</span><button class="cfgStBtn" id="cfgHdFrom">未設定</button></div>
+      <div class="cfgRow"><span class="cfgLabel">到着駅</span><button class="cfgStBtn" id="cfgHdTo">未設定</button></div>
+      <div class="cfgRow"><span class="cfgLabel">午前/午後で入れ替え</span><label class="toggle"><input type="checkbox" id="cfgHdSwap"><span class="slider"></span></label></div>
+    </div>
     <div class="cfgNote">GPS が取得できないとき、アプリ起動時にこの駅が選択されます。午前/午後入れ替えをオンにすると、午後は出発駅と到着駅が逆になります。</div>
     <button class="cfgClear" id="cfgClear">設定をリセット</button>
   </div>
@@ -362,9 +367,20 @@ function buildModal(){
   document.getElementById('colK').innerHTML=items('烏丸線');
   document.getElementById('colT').innerHTML=items('東西線');
 }
-function openModal(w){modalTarget=w;document.getElementById('modalTitle').textContent=(w==='from'?'出発駅':'到着駅')+'を選択';document.getElementById('modal').hidden=false;}
+var cfgPickTarget=null;
+function openModal(w){modalTarget=w;cfgPickTarget=null;
+  var labels={from:'出発駅',to:'到着駅'};
+  document.getElementById('modalTitle').textContent=(labels[w]||'駅')+'を選択';document.getElementById('modal').hidden=false;}
+function openModalForCfg(btnId,lsKey){cfgPickTarget={btnId:btnId,lsKey:lsKey};modalTarget=null;
+  document.getElementById('modalTitle').textContent='駅を選択';document.getElementById('modal').hidden=false;}
 function closeModal(){document.getElementById('modal').hidden=true;}
 function pickStation(s){
+  if(cfgPickTarget){
+    var btn=document.getElementById(cfgPickTarget.btnId);
+    btn.textContent=s;btn.classList.remove('empty');
+    localStorage.setItem(cfgPickTarget.lsKey,s);
+    cfgPickTarget=null;closeModal();return;
+  }
   expanded={};
   if(modalTarget==='from'){FROM=s;userPickedFrom=true;if(TO===FROM)TO=defaultTo(FROM);}
   else{if(s===FROM){closeModal();return;}TO=s;}
@@ -385,19 +401,18 @@ function pickStation(s){
     document.getElementById('navBtn').addEventListener('click',function(){openRoute(NEAREST||FROM);});
     // 設定モーダル
     (function(){
-      var allSt=[];Object.keys(DATA.order).forEach(function(ln){DATA.order[ln].forEach(function(s){if(allSt.indexOf(s)<0)allSt.push(s);});});
-      var selMap={cfgWdFrom:'cfg_weekday_from',cfgWdTo:'cfg_weekday_to',cfgHdFrom:'cfg_holiday_from',cfgHdTo:'cfg_holiday_to'};
-      function fillSel(id){var el=document.getElementById(id),sv=localStorage.getItem(selMap[id])||'';
-        el.innerHTML='<option value="">未設定</option>';allSt.forEach(function(s){el.innerHTML+='<option value="'+s+'"'+(s===sv?' selected':'')+'>'+s+'</option>';});}
+      var btnMap={cfgWdFrom:'cfg_weekday_from',cfgWdTo:'cfg_weekday_to',cfgHdFrom:'cfg_holiday_from',cfgHdTo:'cfg_holiday_to'};
       var swapMap={cfgWdSwap:'cfg_weekday_swap',cfgHdSwap:'cfg_holiday_swap'};
-      function fillAll(){Object.keys(selMap).forEach(fillSel);Object.keys(swapMap).forEach(function(id){document.getElementById(id).checked=localStorage.getItem(swapMap[id])==='1';});}
-      fillAll();
-      document.getElementById('cfgBtn').addEventListener('click',function(){fillAll();document.getElementById('cfgModal').hidden=false;});
+      function syncBtns(){Object.keys(btnMap).forEach(function(id){var el=document.getElementById(id),v=localStorage.getItem(btnMap[id]);
+        el.textContent=v||'未設定';el.classList.toggle('empty',!v);});
+        Object.keys(swapMap).forEach(function(id){document.getElementById(id).checked=localStorage.getItem(swapMap[id])==='1';});}
+      syncBtns();
+      document.getElementById('cfgBtn').addEventListener('click',function(){syncBtns();document.getElementById('cfgModal').hidden=false;});
       document.getElementById('cfgClose').addEventListener('click',function(){document.getElementById('cfgModal').hidden=true;});
       document.getElementById('cfgModal').addEventListener('click',function(e){if(e.target.id==='cfgModal')document.getElementById('cfgModal').hidden=true;});
-      Object.keys(selMap).forEach(function(id){document.getElementById(id).addEventListener('change',function(){var v=this.value;if(v)localStorage.setItem(selMap[id],v);else localStorage.removeItem(selMap[id]);});});
+      Object.keys(btnMap).forEach(function(id){document.getElementById(id).addEventListener('click',function(){openModalForCfg(id,btnMap[id]);});});
       Object.keys(swapMap).forEach(function(id){document.getElementById(id).addEventListener('change',function(){localStorage.setItem(swapMap[id],this.checked?'1':'0');});});
-      document.getElementById('cfgClear').addEventListener('click',function(){Object.keys(selMap).forEach(function(id){localStorage.removeItem(selMap[id]);});Object.keys(swapMap).forEach(function(id){localStorage.removeItem(swapMap[id]);});fillAll();});
+      document.getElementById('cfgClear').addEventListener('click',function(){Object.keys(btnMap).forEach(function(id){localStorage.removeItem(btnMap[id]);});Object.keys(swapMap).forEach(function(id){localStorage.removeItem(swapMap[id]);});syncBtns();});
       // 旧キーを移行
       var oldF=localStorage.getItem('defaultFrom'),oldT=localStorage.getItem('defaultTo'),oldS=localStorage.getItem('cfg_swap_ampm');
       if(oldF){localStorage.setItem('cfg_weekday_from',oldF);localStorage.removeItem('defaultFrom');}
