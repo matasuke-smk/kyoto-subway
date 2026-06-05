@@ -26,8 +26,9 @@
   .wrap{height:100vh;height:100dvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
     padding-top:max(16px,env(safe-area-inset-top));padding-left:14px;padding-right:14px;padding-bottom:8px}
   .hd{flex-shrink:0}
-  .title{text-align:center;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.03em;
+  .title{position:relative;text-align:center;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.03em;
     padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+  #cfgBtn{position:absolute;right:0;top:-2px;background:none;border:0;font-size:18px;padding:2px 4px;cursor:pointer;line-height:1}
   #list{position:relative;flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:manipulation}
   #list::-webkit-scrollbar{width:0;height:0;display:none}
   .route{font-size:18px;font-weight:600;margin:0 2px 8px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
@@ -91,12 +92,21 @@
   .stitem{display:block;width:100%;text-align:center;font-size:13px;font-weight:600;color:var(--ink);
     background:#222226;border:1px solid var(--line);border-radius:7px;padding:5px 4px;margin-bottom:3px;white-space:nowrap;overflow:hidden}
   .meta{font-size:11px;color:var(--hint);margin:2px 0 0;text-align:center}
+  .cfgRow{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--line)}
+  .cfgRow:last-child{border-bottom:none}
+  .cfgLabel{font-size:14px;font-weight:600;color:var(--ink)}
+  .cfgSel{font-size:14px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 24px 6px 8px;
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><path d='M1 3l5 5 5-5' stroke='%233fcca1' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 6px center}
+  .cfgNote{font-size:11px;color:var(--hint);padding:8px 4px 2px;line-height:1.5}
+  .cfgClear{font-size:13px;font-weight:600;color:var(--toz);background:none;border:1px solid var(--toz);border-radius:8px;padding:6px 14px;margin:10px auto 0;display:block}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="hd">
-    <div class="title">京都市営地下鉄</div>
+    <div class="title">京都市営地下鉄<button id="cfgBtn">⚙️</button></div>
     <div class="route">
       <button class="stbtn" id="fromBtn">出発</button>
       <span class="ar">→</span>
@@ -122,6 +132,16 @@
       <div class="col"><div class="colHd k">烏丸線</div><div id="colK"></div></div>
       <div class="col"><div class="colHd t">東西線</div><div id="colT"></div></div>
     </div>
+  </div>
+</div>
+
+<div id="cfgModal" class="modal" hidden>
+  <div class="modalCard">
+    <div class="modalHd"><span id="cfgTitle">設定</span><button id="cfgClose">✕</button></div>
+    <div class="cfgRow"><span class="cfgLabel">デフォルト出発駅</span><select class="cfgSel" id="cfgFrom"></select></div>
+    <div class="cfgRow"><span class="cfgLabel">デフォルト到着駅</span><select class="cfgSel" id="cfgTo"></select></div>
+    <div class="cfgNote">GPS が取得できないとき、またはアプリ起動時にこの駅が選択されます。</div>
+    <button class="cfgClear" id="cfgClear">設定をリセット</button>
   </div>
 </div>
 
@@ -269,7 +289,11 @@ function defaultTo(from){
   var tt=new Date().getHours()<12?hi:lo;
   return tt===from?(from===hi?lo:hi):tt;
 }
-function fallback(){var am=new Date().getHours()<12;FROM=am?'国際会館':'竹田';TO=am?'竹田':'国際会館';}
+function fallback(){
+  var sf=localStorage.getItem('defaultFrom'),st=localStorage.getItem('defaultTo');
+  if(sf&&DATA&&DATA.coords[sf]){FROM=sf;TO=(st&&st!==sf&&DATA.coords[st])?st:defaultTo(sf);return;}
+  var am=new Date().getHours()<12;FROM=am?'国際会館':'竹田';TO=am?'竹田':'国際会館';
+}
 
 // 徒歩所要(直線×1.5÷80m/分+1分)を計算し案内ボタンを更新。walkNear(分)を返す
 function walkLabel(){
@@ -334,6 +358,19 @@ function pickStation(s){
     document.getElementById('gpsBtn').addEventListener('click',function(){userPickedFrom=false;locate();});
     document.getElementById('dayBtn').addEventListener('click',function(){DAYSEL=DAYSEL==='holiday'?'weekday':'holiday';userPickedDay=true;render();});
     document.getElementById('navBtn').addEventListener('click',function(){openRoute(NEAREST||FROM);});
+    // 設定モーダル
+    (function(){
+      var allSt=[];Object.keys(DATA.order).forEach(function(ln){DATA.order[ln].forEach(function(s){if(allSt.indexOf(s)<0)allSt.push(s);});});
+      function fillSel(id){var el=document.getElementById(id),sv=localStorage.getItem(id==='cfgFrom'?'defaultFrom':'defaultTo')||'';
+        el.innerHTML='<option value="">未設定</option>';allSt.forEach(function(s){el.innerHTML+='<option value="'+s+'"'+(s===sv?' selected':'')+'>'+s+'</option>';});}
+      fillSel('cfgFrom');fillSel('cfgTo');
+      document.getElementById('cfgBtn').addEventListener('click',function(){fillSel('cfgFrom');fillSel('cfgTo');document.getElementById('cfgModal').hidden=false;});
+      document.getElementById('cfgClose').addEventListener('click',function(){document.getElementById('cfgModal').hidden=true;});
+      document.getElementById('cfgModal').addEventListener('click',function(e){if(e.target.id==='cfgModal')document.getElementById('cfgModal').hidden=true;});
+      document.getElementById('cfgFrom').addEventListener('change',function(){var v=this.value;if(v)localStorage.setItem('defaultFrom',v);else localStorage.removeItem('defaultFrom');});
+      document.getElementById('cfgTo').addEventListener('change',function(){var v=this.value;if(v)localStorage.setItem('defaultTo',v);else localStorage.removeItem('defaultTo');});
+      document.getElementById('cfgClear').addEventListener('click',function(){localStorage.removeItem('defaultFrom');localStorage.removeItem('defaultTo');fillSel('cfgFrom');fillSel('cfgTo');});
+    })();
     DAYSEL=todayType();
     refresh();
     setInterval(function(){if(!DATA)return;var s=new Date().getHours()*3600+new Date().getMinutes()*60+new Date().getSeconds();
