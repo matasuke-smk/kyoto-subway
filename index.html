@@ -205,7 +205,7 @@ function render(recenter){
   var nowSec=new Date().getHours()*3600+new Date().getMinutes()*60+new Date().getSeconds();
   var upCount=0,html='';NEXTAT=null;
   var walkNear=walkLabel();
-  var walkMin=(FROM===NEAREST&&walkNear!=null)?walkNear:0,LEAD=5;
+  var walkMin=(FROM===NEAREST&&walkNear!=null&&walkNear>3)?walkNear:0,LEAD=5;
   var needSec=nowSec+walkMin*60+LEAD;
   var targetSec=showNext?needSec:nowSec;
   // 乗換案内（時刻表欄の上に1行）
