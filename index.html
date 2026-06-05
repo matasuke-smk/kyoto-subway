@@ -15,6 +15,7 @@
     --bg:#0f0f10; --card:#1a1a1c; --line:rgba(255,255,255,.09);
     --ink:#f1f1f1; --sub:#9b9a96; --hint:#65645f;
     --grn:#3fcca1; --grnbg:#123a30; --kin:#e0a84e; --kinbg:#3a2e12;
+    --toz:#ef7a5a; --tozbg:#3a211a;
     --xfer:#7db4ee; --xferbg:#1c2c44;
     --next:#3a3216; --nextline:#8a7426; --nextink:#f3da8a;
   }
@@ -27,7 +28,7 @@
   .hd{flex-shrink:0}
   .title{text-align:center;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.03em;
     padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--line)}
-  #list{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:manipulation}
+  #list{position:relative;flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:manipulation}
   #list::-webkit-scrollbar{width:0;height:0;display:none}
   .route{font-size:18px;font-weight:600;margin:0 2px 8px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
   .route .ar{color:var(--grn);font-weight:600;font-size:20px}
@@ -49,6 +50,7 @@
   .b{display:inline-flex;align-items:center;justify-content:center;width:82px;height:22px;padding:0 4px;border-radius:6px;font-size:12.5px;font-weight:700;flex-shrink:0;white-space:nowrap;overflow:hidden}
   .b .sfx{font-size:10px;font-weight:700;margin-left:1px}
   .bg{background:var(--grnbg);color:var(--grn)} .bk{background:var(--kinbg);color:var(--kin)}
+  .bz{background:var(--tozbg);color:var(--toz)}
   .bt{background:var(--xferbg);color:var(--xfer)}
   .time{display:flex;align-items:center;gap:8px;font-size:18px;font-variant-numeric:tabular-nums}
   .time b{font-weight:600} .time .to{color:var(--hint);font-size:15px} .time .arr{color:var(--sub);font-weight:500}
@@ -80,7 +82,7 @@
   .cols{display:flex;gap:8px}
   .col{flex:1;min-width:0}
   .colHd{text-align:center;font-size:12px;font-weight:700;padding:3px 0;border-bottom:1px solid var(--line);margin-bottom:4px}
-  .colHd.k{color:var(--grn)} .colHd.t{color:var(--xfer)}
+  .colHd.k{color:var(--grn)} .colHd.t{color:var(--toz)}
   .stitem{display:block;width:100%;text-align:center;font-size:13px;font-weight:600;color:var(--ink);
     background:#222226;border:1px solid var(--line);border-radius:7px;padding:5px 4px;margin-bottom:3px;white-space:nowrap;overflow:hidden}
   .meta{font-size:11px;color:var(--hint);margin:2px 0 0;text-align:center}
@@ -158,16 +160,16 @@ function directList(day,ln,a,b){
 function getJourneys(day){
   if(!FROM||!TO||FROM===TO)return [];
   var la=lineOf(FROM),lb=lineOf(TO),common=la.filter(function(l){return lb.indexOf(l)>=0;});
-  if(common.length){
-    return directList(day,common[0],FROM,TO).map(function(x){
-      return {transfer:false,dest:x.dest,dep:x.dep,arr:x.arr};});
+  if(common.length){var ln=common[0];
+    return directList(day,ln,FROM,TO).map(function(x){
+      return {transfer:false,line:ln,dest:x.dest,dep:x.dep,arr:x.arr};});
   }
   var lA=la[0],lB=lb[0],TR=DATA.transfer,TMIN=DATA.transferMin;
   var leg1=directList(day,lA,FROM,TR),leg2=directList(day,lB,TR,TO),res=[];
   for(var i=0;i<leg1.length;i++){
     var ready=toMin(leg1[i].arr)+TMIN,nx=null;
     for(var j=0;j<leg2.length;j++){var dd=toMin(leg2[j].dep);if(dd>=ready&&dd-ready<=MAXWAIT){nx=leg2[j];break;}}
-    if(nx)res.push({transfer:true,lineB:lB,dest1:leg1[i].dest,dep:leg1[i].dep,arr1:leg1[i].arr,dep2:nx.dep,arr:nx.arr,dest2:nx.dest});
+    if(nx)res.push({transfer:true,lineA:lA,lineB:lB,dest1:leg1[i].dest,dep:leg1[i].dep,arr1:leg1[i].arr,dep2:nx.dep,arr:nx.arr,dest2:nx.dest});
   }
   res.sort(function(x,y){return toMin(x.dep)-toMin(y.dep);});return res;
 }
@@ -175,7 +177,7 @@ function getJourneys(day){
 var THRU={"新田辺":1,"近鉄奈良":1,"びわ湖浜大津":1,"四宮":1};
 function fmtAfter(depSec,nowSec){var a=Math.round((depSec-nowSec)/60);return a<0?'':(a===0?'まもなく':a+'分後');}
 function wrapd(x){return x<0?x+1440:x;}
-function badgeD(dest){return '<span class="b '+(THRU[dest]?'bk':'bg')+'">'+dest+'<span class="sfx">行</span></span>';}
+function badgeD(dest,line){return '<span class="b '+(line==='東西線'?'bz':'bg')+'">'+dest+'<span class="sfx">行</span></span>';}
 function pill(d,n){return '<span class="tag">次発<span class="after" data-dep="'+d+'">'+fmtAfter(d,n)+'</span></span>';}
 function afterSpan(d,n){return '<span class="after" data-dep="'+d+'">'+fmtAfter(d,n)+'</span>';}
 function lineRmain(badge,dep,arr,dur,center,extra){
@@ -216,12 +218,12 @@ function render(recenter){
     var base=(hl?' next':'')+(dim?' past':'');
     if(!j.transfer){
       html+='<div class="row'+base+'"'+(isTarget?' id="nextt"':'')+'>'
-        +lineRmain(badgeD(j.dest),j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center)+'</div>';
+        +lineRmain(badgeD(j.dest,j.line),j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center)+'</div>';
     }else{  // 乗換: 次発(=展開)は2行、それ以外は1行(タップで展開)
       var exp=isTarget||expanded[j.dep],inner;
       if(exp){
-        inner=lineRmain(badgeD(j.dest1),j.dep,j.arr1,wrapd(toMin(j.arr1)-toMin(j.dep)),center)
-             +lineRmain(badgeD(j.dest2),j.dep2,j.arr,wrapd(toMin(j.arr)-toMin(j.dep2)),'','leg2line');
+        inner=lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr1,wrapd(toMin(j.arr1)-toMin(j.dep)),center)
+             +lineRmain(badgeD(j.dest2,j.lineB),j.dep2,j.arr,wrapd(toMin(j.arr)-toMin(j.dep2)),'','leg2line');
       }else{
         inner=lineRmain('<span class="bsp"></span>',j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center);
       }
@@ -234,15 +236,13 @@ function render(recenter){
 }
 function centerNext(){
   var list=document.getElementById('list'),nb=document.getElementById('nextt');
-  if(!list||!nb)return;list.scrollTop=0;
-  var lr=list.getBoundingClientRect(),nr=nb.getBoundingClientRect();
-  list.scrollTop+=(nr.top-lr.top)-(list.clientHeight-nr.height)/2;
+  if(!list||!nb)return;
+  list.scrollTop=Math.max(0,nb.offsetTop-(list.clientHeight-nb.offsetHeight)/2);
 }
 function isAtDefault(){
   var list=document.getElementById('list'),nb=document.getElementById('nextt');
   if(!list||!nb)return true;
-  var lr=list.getBoundingClientRect(),nr=nb.getBoundingClientRect();
-  var target=list.scrollTop+(nr.top-lr.top)-(list.clientHeight-nr.height)/2;
+  var target=Math.max(0,nb.offsetTop-(list.clientHeight-nb.offsetHeight)/2);
   return Math.abs(list.scrollTop-target)<10;
 }
 function updateAfter(){
