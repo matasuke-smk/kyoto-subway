@@ -59,7 +59,9 @@
   .sub{font-size:12px;color:var(--xfer);margin-top:5px;padding-left:2px}
   .row.next{background:var(--next)}
   .row.xnext{flex-direction:row;align-items:center;gap:8px}
-  .row.xnext .legcol{flex:1;min-width:0;display:flex;flex-direction:column}
+  .row.xnext .legcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .row.xnext .legcol .rmain{margin:0}
+  .row.xnext .durcol{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:0 0 auto}
   .tagwrap{flex:1;display:flex;justify-content:center;align-items:center}
   .after{font-size:13px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums}
   .row.next .tag{font-size:20px;font-weight:700;color:var(--nextink);background:rgba(0,0,0,.25);border:.5px solid var(--nextline);border-radius:99px;padding:4px 14px;white-space:nowrap;text-align:center}
@@ -182,6 +184,9 @@ function wrapd(x){return x<0?x+1440:x;}
 function badgeD(dest,line){return '<span class="b '+(line==='東西線'?'bz':'bg')+'">'+dest+'<span class="sfx">行</span></span>';}
 function pill(d,n){return '<span class="tag">次発<span class="after" data-dep="'+d+'">'+fmtAfter(d,n)+'</span></span>';}
 function afterSpan(d,n){return '<span class="after" data-dep="'+d+'">'+fmtAfter(d,n)+'</span>';}
+function legLine(badge,dep,arr){
+  return '<div class="rmain">'+badge+'<span class="time"><b>'+dep+'</b><span class="to">→</span><b class="arr">'+arr+'</b></span></div>';
+}
 function lineRmain(badge,dep,arr,dur,center,extra){
   return '<div class="rmain'+(extra?' '+extra:'')+'">'+badge
     +'<span class="time"><b>'+dep+'</b><span class="to">→</span><b class="arr">'+arr+'</b></span>'
@@ -224,11 +229,11 @@ function render(recenter){
     }else{  // 乗換
       var exp=isTarget||expanded[j.dep];
       var d1=wrapd(toMin(j.arr1)-toMin(j.dep)),d2=wrapd(toMin(j.arr)-toMin(j.dep2)),dt=wrapd(toMin(j.arr)-toMin(j.dep));
-      if(exp&&hl){  // 次発: 2レグ＋「次発」ピルをブロック上下中央に配置
-        var legs=lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr1,d1,'')
-                +lineRmain(badgeD(j.dest2,j.lineB),j.dep2,j.arr,d2,'','leg2line');
-        html+='<div class="row next xnext" id="nextt" data-jdep="'+j.dep+'"><div class="legcol">'+legs+'</div>'
-             +'<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span></div>';
+      if(exp&&hl){  // 次発: 行先/時刻=左, 「次発」ピル=中央, 所要=右(他行と同じ並び)
+        var legs='<div class="legcol">'+legLine(badgeD(j.dest1,j.lineA),j.dep,j.arr1)+legLine(badgeD(j.dest2,j.lineB),j.dep2,j.arr)+'</div>';
+        var durs='<div class="durcol"><span class="dur">'+d1+'分</span><span class="dur">'+d2+'分</span></div>';
+        html+='<div class="row next xnext" id="nextt" data-jdep="'+j.dep+'">'+legs
+             +'<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span>'+durs+'</div>';
       }else if(exp){  // 展開(手動の次発/タップ展開): 2行
         html+='<div class="row'+base+'" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'
              +lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr1,d1,center)
