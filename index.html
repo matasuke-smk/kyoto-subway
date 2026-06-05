@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>京都市営地下鉄 時刻表</title>
+<meta name="theme-color" content="#0f0f10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="地下鉄">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  :root{
+    --bg:#0f0f10; --card:#1a1a1c; --line:rgba(255,255,255,.09);
+    --ink:#f1f1f1; --sub:#9b9a96; --hint:#65645f;
+    --grn:#3fcca1; --grnbg:#123a30; --kin:#e0a84e; --kinbg:#3a2e12;
+    --xfer:#7db4ee; --xferbg:#1c2c44;
+    --next:#3a3216; --nextline:#8a7426; --nextink:#f3da8a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+  html{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.4;height:100vh;height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased}
+  .wrap{height:100vh;height:100dvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column;
+    padding-top:max(16px,env(safe-area-inset-top));padding-left:14px;padding-right:14px;padding-bottom:8px}
+  .hd{flex-shrink:0}
+  .title{text-align:center;font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.03em;
+    padding-bottom:8px;margin-bottom:10px;border-bottom:1px solid var(--line)}
+  #list{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;touch-action:manipulation}
+  #list::-webkit-scrollbar{width:0;height:0;display:none}
+  .route{font-size:18px;font-weight:600;margin:0 2px 8px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+  .route .ar{color:var(--grn);font-weight:600;font-size:20px}
+  .stsel{font-size:18px;font-weight:700;color:var(--ink);background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:6px 26px 6px 10px;max-width:42vw;
+    -webkit-appearance:none;appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><path d='M1 3l5 5 5-5' stroke='%233fcca1' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 8px center}
+  .ctl{display:flex;justify-content:center;align-items:center;gap:10px;margin:0 0 13px}
+  #gpsBtn,#dayBtn{font-size:13px;font-weight:600;border-radius:99px;padding:5px 13px;
+    border:1px solid var(--line);background:var(--card);color:var(--sub);transition:.15s}
+  #gpsBtn.on{color:var(--grn);background:var(--grnbg);border-color:var(--grn)}
+  #dayBtn{color:var(--grn);background:var(--grnbg);border-color:var(--grn)}
+  #dayBtn.holi{color:var(--kin);background:var(--kinbg);border-color:var(--kin)}
+  .card{background:var(--card);border:.5px solid var(--line);border-radius:14px;overflow:hidden}
+  .row{display:flex;flex-direction:column;padding:11px 15px;border-top:.5px solid var(--line)}
+  .row:first-child{border-top:none}
+  .rmain{display:flex;align-items:center;gap:10px}
+  .b{display:inline-flex;align-items:center;justify-content:center;width:82px;height:22px;padding:0 4px;border-radius:6px;font-size:12.5px;font-weight:700;flex-shrink:0;white-space:nowrap;overflow:hidden}
+  .b .sfx{font-size:10px;font-weight:700;margin-left:1px}
+  .bg{background:var(--grnbg);color:var(--grn)} .bk{background:var(--kinbg);color:var(--kin)}
+  .bt{background:var(--xferbg);color:var(--xfer)}
+  .time{display:flex;align-items:center;gap:8px;font-size:18px;font-variant-numeric:tabular-nums}
+  .time b{font-weight:600} .time .to{color:var(--hint);font-size:15px} .time .arr{color:var(--sub);font-weight:500}
+  .rmain .right{margin-left:auto;display:flex;align-items:center;gap:9px}
+  .dur{font-size:13px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sub{font-size:12px;color:var(--xfer);margin-top:5px;padding-left:2px}
+  .row.next{background:var(--next)}
+  .tagwrap{flex:1;display:flex;justify-content:center;align-items:center}
+  .after{font-size:13px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums}
+  .row.next .tag{font-size:20px;font-weight:700;color:var(--nextink);background:rgba(0,0,0,.25);border:.5px solid var(--nextline);border-radius:99px;padding:4px 14px;white-space:nowrap;text-align:center}
+  .row.next .tag .after{display:block;font-size:12px;margin-top:1px;color:var(--nextink)}
+  .row.past{opacity:.42}
+  .foot{flex-shrink:0;margin-top:13px;padding:0 4px;font-size:11px;color:var(--hint);line-height:1.7}
+  .navbtn{display:block;width:100%;margin:0 0 10px;font-size:21px;font-weight:700;color:var(--grn);
+    background:var(--grnbg);border:1px solid var(--grn);border-radius:10px;padding:10px 14px}
+  .meta{font-size:11px;color:var(--hint);margin:2px 0 0;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd">
+    <div class="title">京都市営地下鉄</div>
+    <div class="route">
+      <select class="stsel" id="fromSel" aria-label="出発駅"></select>
+      <span class="ar">→</span>
+      <select class="stsel" id="toSel" aria-label="到着駅"></select>
+    </div>
+    <div class="ctl">
+      <button id="gpsBtn">現在地</button>
+      <button id="dayBtn">平日</button>
+    </div>
+  </div>
+  <div class="card" id="list"></div>
+  <div class="foot">
+    <button id="navBtn" class="navbtn">最寄り駅まで案内</button>
+    <div class="meta" id="rev"></div>
+  </div>
+</div>
+
+<script>
+var DATA=null, FROM=null, TO=null, NEAREST=null, POS=null, userPickedFrom=false;
+var DAYSEL=null, userPickedDay=false, NEXTAT=null, MAXWAIT=90;
+function toMin(t){var p=t.split(":");return +p[0]*60+ +p[1];}
+function lineOf(s){return (DATA.stationLine[s]||[]);}
+function dirKey(ln,a,b){return DATA.order[ln].indexOf(b)>DATA.order[ln].indexOf(a)?'high':'low';}
+
+// --- 距離 ---
+function hav(la1,lo1,la2,lo2){
+  var R=6371,r=Math.PI/180,dla=(la2-la1)*r,dlo=(lo2-lo1)*r;
+  var a=Math.sin(dla/2)*Math.sin(dla/2)+Math.cos(la1*r)*Math.cos(la2*r)*Math.sin(dlo/2)*Math.sin(dlo/2);
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+function nearest(lat,lon){var best=null,bd=1e9;for(var k in DATA.coords){var c=DATA.coords[k],d=hav(lat,lon,c[0],c[1]);if(d<bd){bd=d;best=k;}}return best;}
+
+// --- 祝日判定 ---
+function jpHolidaySet(y){
+  var H={},mk=function(m,d){H[m+"-"+d]=1;};
+  mk(1,1);mk(2,11);mk(2,23);mk(4,29);mk(5,3);mk(5,4);mk(5,5);mk(8,11);mk(11,3);mk(11,23);
+  function nthMon(m,n){var f=new Date(y,m-1,1).getDay();return 1+((8-f)%7)+(n-1)*7;}
+  mk(1,nthMon(1,2));mk(7,nthMon(7,3));mk(9,nthMon(9,3));mk(10,nthMon(10,2));
+  var sp=Math.floor(20.8431+0.242194*(y-1980)-Math.floor((y-1980)/4));
+  var au=Math.floor(23.2488+0.242194*(y-1980)-Math.floor((y-1980)/4));
+  mk(3,sp);mk(9,au);
+  Object.keys(H).slice().forEach(function(k){var p=k.split("-"),dt=new Date(y,p[0]-1,+p[1]);
+    if(dt.getDay()===0){var n=new Date(dt);do{n.setDate(n.getDate()+1);}while(H[(n.getMonth()+1)+"-"+n.getDate()]);H[(n.getMonth()+1)+"-"+n.getDate()]=1;}});
+  return H;
+}
+function isHolidayType(d){var w=d.getDay();if(w===0||w===6)return true;return !!jpHolidaySet(d.getFullYear())[(d.getMonth()+1)+"-"+d.getDate()];}
+function todayType(){return isHolidayType(new Date())?'holiday':'weekday';}
+
+// --- 経路 ---
+function directList(day,ln,a,b){
+  var out=[],L=DATA[day][ln][dirKey(ln,a,b)];
+  for(var i=0;i<L.length;i++){var t=L[i].t;if(t[a]&&t[b]&&toMin(t[b])>=toMin(t[a]))out.push({dest:L[i].dest,dep:t[a],arr:t[b]});}
+  out.sort(function(x,y){return toMin(x.dep)-toMin(y.dep);});return out;
+}
+function getJourneys(day){
+  if(!FROM||!TO||FROM===TO)return [];
+  var la=lineOf(FROM),lb=lineOf(TO),common=la.filter(function(l){return lb.indexOf(l)>=0;});
+  if(common.length){
+    return directList(day,common[0],FROM,TO).map(function(x){
+      return {transfer:false,dest:x.dest,dep:x.dep,arr:x.arr};});
+  }
+  var lA=la[0],lB=lb[0],TR=DATA.transfer,TMIN=DATA.transferMin;
+  var leg1=directList(day,lA,FROM,TR),leg2=directList(day,lB,TR,TO),res=[];
+  for(var i=0;i<leg1.length;i++){
+    var ready=toMin(leg1[i].arr)+TMIN,nx=null;
+    for(var j=0;j<leg2.length;j++){var dd=toMin(leg2[j].dep);if(dd>=ready&&dd-ready<=MAXWAIT){nx=leg2[j];break;}}
+    if(nx)res.push({transfer:true,lineB:lB,dep:leg1[i].dep,arr1:leg1[i].arr,dep2:nx.dep,arr:nx.arr,dest2:nx.dest});
+  }
+  res.sort(function(x,y){return toMin(x.dep)-toMin(y.dep);});return res;
+}
+
+var THRU={"新田辺":1,"近鉄奈良":1,"びわ湖浜大津":1,"四宮":1};
+function fmtAfter(depSec,nowSec){var a=Math.round((depSec-nowSec)/60);return a<0?'':(a===0?'まもなく':a+'分後');}
+
+function render(recenter){
+  if(!DATA||!FROM||!TO)return;
+  if(FROM===TO)TO=defaultTo(FROM);
+  document.getElementById('fromSel').value=FROM;
+  document.getElementById('toSel').value=TO;
+  document.getElementById('gpsBtn').classList.toggle('on', !!NEAREST&&FROM===NEAREST);
+  var showNext=(DAYSEL===todayType()&&FROM===NEAREST);
+  var nowSec=new Date().getHours()*3600+new Date().getMinutes()*60+new Date().getSeconds();
+  var upCount=0,html='';NEXTAT=null;
+  var walkNear=walkLabel();
+  var walkMin=(FROM===NEAREST&&walkNear!=null)?walkNear:0,LEAD=5;
+  var needSec=nowSec+walkMin*60+LEAD;
+  var targetSec=showNext?needSec:nowSec;
+  var js=getJourneys(DAYSEL);
+  js.forEach(function(j){
+    var dep=j.dep,arr=j.arr,depSec=toMin(dep)*60;
+    var atOrAfter=depSec>=targetSec,idx=atOrAfter?upCount++:-1;
+    var isTarget=idx===0;
+    var hl=showNext&&isTarget;
+    if(hl)NEXTAT=depSec-walkMin*60-LEAD;
+    var dim=showNext&&depSec<targetSec;
+    var showAfter=showNext&&depSec>=nowSec&&(!atOrAfter||idx<3);
+    var dur=toMin(arr)-toMin(dep);if(dur<0)dur+=1440;
+    var badge,sub='';
+    if(j.transfer){
+      var wait=toMin(j.dep2)-toMin(j.arr1);if(wait<0)wait+=1440;
+      badge='<span class="b bt">乗換</span>';
+      sub='<div class="sub">'+DATA.transfer+'で'+j.lineB+'にのりかえ（'+j.arr1+'着→'+j.dep2+'発・待'+wait+'分）</div>';
+    }else{
+      var thru=THRU[j.dest];
+      badge='<span class="b '+(thru?'bk':'bg')+'">'+j.dest+'<span class="sfx">行</span></span>';
+    }
+    var center=hl?('<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span>')
+               :(showAfter?('<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span>'):'');
+    html+='<div class="row'+(hl?' next':'')+(dim?' past':'')+'"'+(isTarget?' id="nextt"':'')+'>'
+      +'<div class="rmain">'+badge
+      +'<span class="time"><b>'+dep+'</b><span class="to">→</span><b class="arr">'+arr+'</b></span>'
+      +(center?'<span class="tagwrap">'+center+'</span>':'')
+      +'<span class="right"><span class="dur">'+dur+'分</span></span></div>'+sub+'</div>';
+  });
+  if(!js.length)html='<div class="row"><div class="rmain">'+(FROM===TO?'出発駅と到着駅が同じです。':'この区間の列車がありません。')+'</div></div>';
+  var list=document.getElementById('list'),sc=list.scrollTop;list.innerHTML=html;
+  if(recenter===false)list.scrollTop=sc;else centerNext();
+}
+function centerNext(){
+  var list=document.getElementById('list'),nb=document.getElementById('nextt');
+  if(!list||!nb)return;list.scrollTop=0;
+  var lr=list.getBoundingClientRect(),nr=nb.getBoundingClientRect();
+  list.scrollTop+=(nr.top-lr.top)-(list.clientHeight-nr.height)/2;
+}
+function isAtDefault(){
+  var list=document.getElementById('list'),nb=document.getElementById('nextt');
+  if(!list||!nb)return true;
+  var lr=list.getBoundingClientRect(),nr=nb.getBoundingClientRect();
+  var target=list.scrollTop+(nr.top-lr.top)-(list.clientHeight-nr.height)/2;
+  return Math.abs(list.scrollTop-target)<10;
+}
+function updateAfter(){
+  var els=document.querySelectorAll('.after');if(!els.length)return;
+  var d=new Date(),s=d.getHours()*3600+d.getMinutes()*60+d.getSeconds();
+  for(var i=0;i<els.length;i++){var dp=els[i].getAttribute('data-dep');if(dp!==null)els[i].textContent=fmtAfter(+dp,s);}
+}
+
+function defaultTo(from){
+  var ln=lineOf(from)[0],ord=DATA.order[ln],hi=ord[ord.length-1],lo=ord[0];
+  var tt=new Date().getHours()<12?hi:lo;
+  return tt===from?(from===hi?lo:hi):tt;
+}
+function fallback(){var am=new Date().getHours()<12;FROM=am?'国際会館':'竹田';TO=am?'竹田':'国際会館';}
+
+// 徒歩所要(直線×1.5÷80m/分+1分)を計算し案内ボタンを更新。walkNear(分)を返す
+function walkLabel(){
+  var wn=null;
+  if(POS&&NEAREST&&DATA.coords[NEAREST]){
+    var dm=hav(POS.lat,POS.lon,DATA.coords[NEAREST][0],DATA.coords[NEAREST][1])*1000;
+    wn=Math.ceil(dm*1.5/80)+1;
+  }
+  var navTgt=NEAREST||FROM;
+  document.getElementById('navBtn').textContent=(navTgt?navTgt+'駅':'最寄り駅')+'まで案内'+(wn!=null?('（徒歩'+wn+'分）'):'');
+  return wn;
+}
+function openRoute(st){
+  if(!DATA)return;var c=DATA.coords[st];if(!c)return;var dd=c[0]+','+c[1];
+  var app='comgooglemaps://?daddr='+dd+'&directionsmode=walking';
+  var web='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(dd)+'&travelmode=walking';
+  var t=Date.now();location.href=app;
+  setTimeout(function(){if(document.visibilityState==='visible'&&Date.now()-t<2500)window.open(web,'_blank');},1500);
+}
+function locate(){
+  if(!navigator.geolocation){if(!FROM)fallback();render();return;}
+  navigator.geolocation.getCurrentPosition(function(p){
+    var la=p.coords.latitude,lo=p.coords.longitude;POS={lat:la,lon:lo};
+    FROM=nearest(la,lo);NEAREST=FROM;userPickedFrom=false;
+    if(!TO||TO===FROM)TO=defaultTo(FROM);render();
+  },function(){if(!FROM)fallback();render();},{enableHighAccuracy:false,timeout:8000,maximumAge:60000});
+}
+function locateWalk(){
+  if(!DATA||userPickedFrom||!navigator.geolocation)return;
+  navigator.geolocation.getCurrentPosition(function(p){
+    var la=p.coords.latitude,lo=p.coords.longitude;POS={lat:la,lon:lo};
+    var nf=nearest(la,lo);
+    if(nf!==FROM){FROM=nf;NEAREST=nf;if(!TO||TO===FROM)TO=defaultTo(FROM);render(isAtDefault());}
+    else{NEAREST=nf;walkLabel();}
+  },function(){},{enableHighAccuracy:false,timeout:8000,maximumAge:10000});
+}
+function refresh(){if(!DATA)return;if(!userPickedDay)DAYSEL=todayType();if(userPickedFrom){render();}else{if(!FROM)fallback();render();locate();}}
+
+function buildOptions(){
+  var seen={};
+  return Object.keys(DATA.order).map(function(ln){
+    var opts=DATA.order[ln].filter(function(s){if(seen[s])return false;seen[s]=1;return true;})
+      .map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
+    return '<optgroup label="'+ln+'">'+opts+'</optgroup>';
+  }).join('');
+}
+(function(){
+  fetch('timetable.json').then(function(r){return r.json();}).then(function(j){
+    DATA=j;document.getElementById('rev').textContent=j.source;
+    var fs=document.getElementById('fromSel'),ts=document.getElementById('toSel');
+    fs.innerHTML=buildOptions();ts.innerHTML=buildOptions();
+    fs.addEventListener('change',function(){FROM=fs.value;userPickedFrom=true;if(TO===FROM)TO=defaultTo(FROM);render();});
+    ts.addEventListener('change',function(){TO=ts.value;render();});
+    document.getElementById('gpsBtn').addEventListener('click',function(){userPickedFrom=false;locate();});
+    document.getElementById('dayBtn').addEventListener('click',function(){DAYSEL=DAYSEL==='holiday'?'weekday':'holiday';userPickedDay=true;render();});
+    document.getElementById('navBtn').addEventListener('click',function(){openRoute(NEAREST||FROM);});
+    DAYSEL=todayType();
+    refresh();
+    setInterval(function(){if(!DATA)return;var s=new Date().getHours()*3600+new Date().getMinutes()*60+new Date().getSeconds();
+      if(NEXTAT!=null&&s>NEXTAT){var atDef=isAtDefault();render(atDef);}else updateAfter();},1000);
+    setInterval(locateWalk,30000);
+  }).catch(function(){document.getElementById('list').innerHTML='<div class="row"><div class="rmain">時刻表を読み込めませんでした。</div></div>';});
+})();
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refresh();});
+window.addEventListener('pageshow',function(){refresh();});
+(function(){var lt=0;document.getElementById('list').addEventListener('touchend',function(){
+  var t=new Date().getTime();if(t-lt<300)centerNext();lt=t;},{passive:true});})();
+(function(){var sx=0,sy=0,tk=false;
+  document.addEventListener('touchstart',function(e){if(e.touches.length!==1){tk=false;return;}sx=e.touches[0].clientX;sy=e.touches[0].clientY;tk=true;},{passive:true});
+  document.addEventListener('touchend',function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;
+    var a=FROM;FROM=TO;TO=a;userPickedFrom=true;render();},{passive:true});
+})();
+if('serviceWorker' in navigator){
+  var hadController=!!navigator.serviceWorker.controller,reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){if(reloaded)return;if(hadController){reloaded=true;location.reload();}hadController=true;});
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').then(function(reg){
+    document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')reg.update().catch(function(){});});
+  }).catch(function(){});});
+}
+</script>
+</body>
+</html>

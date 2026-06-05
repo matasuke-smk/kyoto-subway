@@ -1,0 +1,17 @@
+{
+  "name": "京都市営地下鉄 時刻表",
+  "short_name": "地下鉄",
+  "description": "京都市営地下鉄 烏丸線・東西線（GPS最寄り駅・烏丸御池乗換対応）",
+  "lang": "ja",
+  "start_url": ".",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0f10",
+  "theme_color": "#0f0f10",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
