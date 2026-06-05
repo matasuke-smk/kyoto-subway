@@ -67,6 +67,22 @@
   .foot{flex-shrink:0;margin-top:13px;padding:0 4px;font-size:11px;color:var(--hint);line-height:1.7}
   .navbtn{display:block;width:100%;margin:0 0 10px;font-size:21px;font-weight:700;color:var(--grn);
     background:var(--grnbg);border:1px solid var(--grn);border-radius:10px;padding:10px 14px}
+  .stbtn{font-size:18px;font-weight:700;color:var(--ink);background:var(--card);border:1px solid var(--line);
+    border-radius:10px;padding:7px 14px;max-width:42vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rmain+.rmain{margin-top:5px}
+  .bsp{width:82px;flex-shrink:0}
+  .modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.66);display:flex;align-items:center;justify-content:center;padding:14px}
+  .modal[hidden]{display:none}
+  .modalCard{width:100%;max-width:460px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .modalHd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  #modalTitle{font-size:15px;font-weight:700}
+  #modalClose{background:none;border:0;color:var(--sub);font-size:18px;padding:4px 8px}
+  .cols{display:flex;gap:8px}
+  .col{flex:1;min-width:0}
+  .colHd{text-align:center;font-size:12px;font-weight:700;padding:3px 0;border-bottom:1px solid var(--line);margin-bottom:4px}
+  .colHd.k{color:var(--grn)} .colHd.t{color:var(--xfer)}
+  .stitem{display:block;width:100%;text-align:center;font-size:13px;font-weight:600;color:var(--ink);
+    background:#222226;border:1px solid var(--line);border-radius:7px;padding:5px 4px;margin-bottom:3px;white-space:nowrap;overflow:hidden}
   .meta{font-size:11px;color:var(--hint);margin:2px 0 0;text-align:center}
 </style>
 </head>
@@ -75,9 +91,9 @@
   <div class="hd">
     <div class="title">京都市営地下鉄</div>
     <div class="route">
-      <select class="stsel" id="fromSel" aria-label="出発駅"></select>
+      <button class="stbtn" id="fromBtn">出発</button>
       <span class="ar">→</span>
-      <select class="stsel" id="toSel" aria-label="到着駅"></select>
+      <button class="stbtn" id="toBtn">到着</button>
     </div>
     <div class="ctl">
       <button id="gpsBtn">現在地</button>
@@ -92,9 +108,19 @@
   </div>
 </div>
 
+<div id="modal" class="modal" hidden>
+  <div class="modalCard">
+    <div class="modalHd"><span id="modalTitle">駅を選択</span><button id="modalClose">✕</button></div>
+    <div class="cols">
+      <div class="col"><div class="colHd k">烏丸線</div><div id="colK"></div></div>
+      <div class="col"><div class="colHd t">東西線</div><div id="colT"></div></div>
+    </div>
+  </div>
+</div>
+
 <script>
 var DATA=null, FROM=null, TO=null, NEAREST=null, POS=null, userPickedFrom=false;
-var DAYSEL=null, userPickedDay=false, NEXTAT=null, MAXWAIT=90;
+var DAYSEL=null, userPickedDay=false, NEXTAT=null, MAXWAIT=90, expanded={}, modalTarget=null;
 function toMin(t){var p=t.split(":");return +p[0]*60+ +p[1];}
 function lineOf(s){return (DATA.stationLine[s]||[]);}
 function dirKey(ln,a,b){return DATA.order[ln].indexOf(b)>DATA.order[ln].indexOf(a)?'high':'low';}
@@ -150,19 +176,20 @@ var THRU={"新田辺":1,"近鉄奈良":1,"びわ湖浜大津":1,"四宮":1};
 function fmtAfter(depSec,nowSec){var a=Math.round((depSec-nowSec)/60);return a<0?'':(a===0?'まもなく':a+'分後');}
 function wrapd(x){return x<0?x+1440:x;}
 function badgeD(dest){return '<span class="b '+(THRU[dest]?'bk':'bg')+'">'+dest+'<span class="sfx">行</span></span>';}
-function rowD(cls,id,badge,dep,arr,dur,center){
-  return '<div class="row'+cls+'"'+(id?' id="nextt"':'')+'>'
-    +'<div class="rmain">'+badge
+function pill(d,n){return '<span class="tag">次発<span class="after" data-dep="'+d+'">'+fmtAfter(d,n)+'</span></span>';}
+function afterSpan(d,n){return '<span class="after" data-dep="'+d+'">'+fmtAfter(d,n)+'</span>';}
+function lineRmain(badge,dep,arr,dur,center,extra){
+  return '<div class="rmain'+(extra?' '+extra:'')+'">'+badge
     +'<span class="time"><b>'+dep+'</b><span class="to">→</span><b class="arr">'+arr+'</b></span>'
     +(center?'<span class="tagwrap">'+center+'</span>':'')
-    +'<span class="right"><span class="dur">'+dur+'分</span></span></div></div>';
+    +'<span class="right"><span class="dur">'+dur+'分</span></span></div>';
 }
 
 function render(recenter){
   if(!DATA||!FROM||!TO)return;
   if(FROM===TO)TO=defaultTo(FROM);
-  document.getElementById('fromSel').value=FROM;
-  document.getElementById('toSel').value=TO;
+  document.getElementById('fromBtn').textContent=FROM;
+  document.getElementById('toBtn').textContent=TO;
   document.getElementById('gpsBtn').classList.toggle('on', !!NEAREST&&FROM===NEAREST);
   var showNext=(DAYSEL===todayType()&&FROM===NEAREST);
   var nowSec=new Date().getHours()*3600+new Date().getMinutes()*60+new Date().getSeconds();
@@ -185,14 +212,20 @@ function render(recenter){
     if(hl)NEXTAT=depSec-walkMin*60-LEAD;
     var dim=showNext&&depSec<targetSec;
     var showAfter=showNext&&depSec>=nowSec&&(!atOrAfter||idx<3);
-    var center=hl?('<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span>')
-               :(showAfter?('<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span>'):'');
+    var center=hl?pill(depSec,nowSec):(showAfter?afterSpan(depSec,nowSec):'');
     var base=(hl?' next':'')+(dim?' past':'');
     if(!j.transfer){
-      html+=rowD(base,isTarget,badgeD(j.dest),j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center);
-    }else{  // 乗換: 2レグを2行で
-      html+=rowD(base,isTarget,badgeD(j.dest1),j.dep,j.arr1,wrapd(toMin(j.arr1)-toMin(j.dep)),center);
-      html+=rowD(base+' leg2',false,badgeD(j.dest2),j.dep2,j.arr,wrapd(toMin(j.arr)-toMin(j.dep2)),'');
+      html+='<div class="row'+base+'"'+(isTarget?' id="nextt"':'')+'>'
+        +lineRmain(badgeD(j.dest),j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center)+'</div>';
+    }else{  // 乗換: 次発(=展開)は2行、それ以外は1行(タップで展開)
+      var exp=isTarget||expanded[j.dep],inner;
+      if(exp){
+        inner=lineRmain(badgeD(j.dest1),j.dep,j.arr1,wrapd(toMin(j.arr1)-toMin(j.dep)),center)
+             +lineRmain(badgeD(j.dest2),j.dep2,j.arr,wrapd(toMin(j.arr)-toMin(j.dep2)),'','leg2line');
+      }else{
+        inner=lineRmain('<span class="bsp"></span>',j.dep,j.arr,wrapd(toMin(j.arr)-toMin(j.dep)),center);
+      }
+      html+='<div class="row'+base+'" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'+inner+'</div>';
     }
   });
   if(!js.length){nt.style.display='none';html='<div class="row"><div class="rmain">'+(FROM===TO?'出発駅と到着駅が同じです。':'この区間の列車がありません。')+'</div></div>';}
@@ -262,21 +295,29 @@ function locateWalk(){
 }
 function refresh(){if(!DATA)return;if(!userPickedDay)DAYSEL=todayType();if(userPickedFrom){render();}else{if(!FROM)fallback();render();locate();}}
 
-function buildOptions(){
-  var seen={};
-  return Object.keys(DATA.order).map(function(ln){
-    var opts=DATA.order[ln].filter(function(s){if(seen[s])return false;seen[s]=1;return true;})
-      .map(function(s){return '<option value="'+s+'">'+s+'</option>';}).join('');
-    return '<optgroup label="'+ln+'">'+opts+'</optgroup>';
-  }).join('');
+function buildModal(){
+  function items(ln){return DATA.order[ln].map(function(s){return '<button class="stitem" data-st="'+s+'">'+s+'</button>';}).join('');}
+  document.getElementById('colK').innerHTML=items('烏丸線');
+  document.getElementById('colT').innerHTML=items('東西線');
+}
+function openModal(w){modalTarget=w;document.getElementById('modalTitle').textContent=(w==='from'?'出発駅':'到着駅')+'を選択';document.getElementById('modal').hidden=false;}
+function closeModal(){document.getElementById('modal').hidden=true;}
+function pickStation(s){
+  expanded={};
+  if(modalTarget==='from'){FROM=s;userPickedFrom=true;if(TO===FROM)TO=defaultTo(FROM);}
+  else{if(s===FROM){closeModal();return;}TO=s;}
+  closeModal();render();
 }
 (function(){
   fetch('timetable.json').then(function(r){return r.json();}).then(function(j){
     DATA=j;document.getElementById('rev').textContent=j.source;
-    var fs=document.getElementById('fromSel'),ts=document.getElementById('toSel');
-    fs.innerHTML=buildOptions();ts.innerHTML=buildOptions();
-    fs.addEventListener('change',function(){FROM=fs.value;userPickedFrom=true;if(TO===FROM)TO=defaultTo(FROM);render();});
-    ts.addEventListener('change',function(){TO=ts.value;render();});
+    buildModal();
+    document.getElementById('fromBtn').addEventListener('click',function(){openModal('from');});
+    document.getElementById('toBtn').addEventListener('click',function(){openModal('to');});
+    document.getElementById('modalClose').addEventListener('click',closeModal);
+    document.getElementById('modal').addEventListener('click',function(e){
+      if(e.target.id==='modal'){closeModal();return;}
+      var b=e.target.closest('.stitem');if(b)pickStation(b.getAttribute('data-st'));});
     document.getElementById('gpsBtn').addEventListener('click',function(){userPickedFrom=false;locate();});
     document.getElementById('dayBtn').addEventListener('click',function(){DAYSEL=DAYSEL==='holiday'?'weekday':'holiday';userPickedDay=true;render();});
     document.getElementById('navBtn').addEventListener('click',function(){openRoute(NEAREST||FROM);});
@@ -289,13 +330,20 @@ function buildOptions(){
 })();
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')refresh();});
 window.addEventListener('pageshow',function(){refresh();});
-(function(){var lt=0;document.getElementById('list').addEventListener('touchend',function(){
-  var t=new Date().getTime();if(t-lt<300)centerNext();lt=t;},{passive:true});})();
+(function(){var lastTap=0,pend=null,sy=0,moved=false,L=document.getElementById('list');
+  L.addEventListener('touchstart',function(e){sy=e.touches[0].clientY;moved=false;},{passive:true});
+  L.addEventListener('touchmove',function(e){if(Math.abs(e.touches[0].clientY-sy)>10)moved=true;},{passive:true});
+  L.addEventListener('touchend',function(e){
+    if(moved)return;var t=new Date().getTime();
+    if(t-lastTap<300){if(pend){clearTimeout(pend);pend=null;}lastTap=0;centerNext();return;}
+    lastTap=t;var row=e.target.closest('.row[data-jdep]');
+    if(row){var dep=row.getAttribute('data-jdep');pend=setTimeout(function(){pend=null;expanded[dep]=!expanded[dep];render(false);},300);}
+  },{passive:true});})();
 (function(){var sx=0,sy=0,tk=false;
   document.addEventListener('touchstart',function(e){if(e.touches.length!==1){tk=false;return;}sx=e.touches[0].clientX;sy=e.touches[0].clientY;tk=true;},{passive:true});
   document.addEventListener('touchend',function(e){if(!tk)return;tk=false;var t=e.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
     if(Math.abs(dx)<50||Math.abs(dx)<Math.abs(dy)*1.5)return;
-    var a=FROM;FROM=TO;TO=a;userPickedFrom=true;render();},{passive:true});
+    var a=FROM;FROM=TO;TO=a;userPickedFrom=true;expanded={};render();},{passive:true});
 })();
 if('serviceWorker' in navigator){
   var hadController=!!navigator.serviceWorker.controller,reloaded=false;
