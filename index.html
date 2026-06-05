@@ -229,15 +229,12 @@ function render(recenter){
     }else{  // 乗換
       var exp=isTarget||expanded[j.dep];
       var d1=wrapd(toMin(j.arr1)-toMin(j.dep)),d2=wrapd(toMin(j.arr)-toMin(j.dep2)),dt=wrapd(toMin(j.arr)-toMin(j.dep));
-      if(exp&&hl){  // 次発: 行先/時刻=左, 「次発」ピル=中央, 所要=右(他行と同じ並び)
+      if(exp){  // 展開(次発/手動次発/タップ): 行先・時刻=左, 次発or n分後=中央(上下中央), 所要=右
         var legs='<div class="legcol">'+legLine(badgeD(j.dest1,j.lineA),j.dep,j.arr1)+legLine(badgeD(j.dest2,j.lineB),j.dep2,j.arr)+'</div>';
         var durs='<div class="durcol"><span class="dur">'+d1+'分</span><span class="dur">'+d2+'分</span></div>';
-        html+='<div class="row next xnext" id="nextt" data-jdep="'+j.dep+'">'+legs
-             +'<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span>'+durs+'</div>';
-      }else if(exp){  // 展開(手動の次発/タップ展開): 2行
-        html+='<div class="row'+base+'" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'
-             +lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr1,d1,center)
-             +lineRmain(badgeD(j.dest2,j.lineB),j.dep2,j.arr,d2,'','leg2line')+'</div>';
+        var midc=hl?('<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span>')
+                  :(showAfter?afterSpan(depSec,nowSec):'');
+        html+='<div class="row'+base+' xnext" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'+legs+midc+durs+'</div>';
       }else{  // 1行: 出発駅で乗る電車(leg1)の行先を表示
         html+='<div class="row'+base+'" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'
              +lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr,dt,center)+'</div>';
