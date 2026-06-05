@@ -59,8 +59,9 @@
   .sub{font-size:12px;color:var(--xfer);margin-top:5px;padding-left:2px}
   .row.next{background:var(--next)}
   .row.xnext{flex-direction:row;align-items:center;gap:8px}
-  .row.xnext .legcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+  .row.xnext .legcol{flex:0 1 auto;min-width:0;display:flex;flex-direction:column;gap:5px}
   .row.xnext .legcol .rmain{margin:0}
+  .row.xnext .midcol{flex:1;min-width:0;display:flex;justify-content:center;align-items:center}
   .row.xnext .durcol{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex:0 0 auto}
   .tagwrap{flex:1;display:flex;justify-content:center;align-items:center}
   .after{font-size:13px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums}
@@ -234,7 +235,7 @@ function render(recenter){
         var durs='<div class="durcol"><span class="dur">'+d1+'分</span><span class="dur">'+d2+'分</span></div>';
         var midc=hl?('<span class="tag">次発<span class="after" data-dep="'+depSec+'">'+fmtAfter(depSec,nowSec)+'</span></span>')
                   :(showAfter?afterSpan(depSec,nowSec):'');
-        html+='<div class="row'+base+' xnext" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'+legs+midc+durs+'</div>';
+        html+='<div class="row'+base+' xnext" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'+legs+'<div class="midcol">'+midc+'</div>'+durs+'</div>';
       }else{  // 1行: 出発駅で乗る電車(leg1)の行先を表示
         html+='<div class="row'+base+'" data-jdep="'+j.dep+'"'+(isTarget?' id="nextt"':'')+'>'
              +lineRmain(badgeD(j.dest1,j.lineA),j.dep,j.arr,dt,center)+'</div>';
