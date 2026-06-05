@@ -79,12 +79,11 @@
     border-radius:10px;padding:7px 14px;width:38vw;max-width:170px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .rmain+.rmain{margin-top:5px}
   .bsp{width:82px;flex-shrink:0}
-  .modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.66);display:flex;align-items:center;justify-content:center;padding:14px}
+  .modal{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:0}
   .modal[hidden]{display:none}
-  .modalCard{width:100%;max-width:460px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
-  #modal{background:var(--bg);padding:0}
-  #modal .modalCard{max-width:100%;max-height:100%;height:100%;border-radius:0;border:none;
+  .modalCard{width:100%;height:100%;max-width:100%;max-height:100%;overflow:auto;background:var(--card);border:none;border-radius:0;
     display:flex;flex-direction:column;padding:max(14px,env(safe-area-inset-top)) 16px 14px}
+  #modal{z-index:1100}
   .modalHd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-shrink:0}
   #modalTitle{font-size:17px;font-weight:700}
   #modalClose,#cfgClose{background:none;border:0;color:var(--sub);font-size:20px;padding:4px 8px}
@@ -95,9 +94,9 @@
   .stitem{display:block;width:100%;text-align:center;font-size:15px;font-weight:600;color:var(--ink);
     background:#222226;border:1px solid var(--line);border-radius:8px;padding:7px 4px;margin-bottom:5px;white-space:nowrap;overflow:hidden}
   .meta{font-size:11px;color:var(--hint);margin:2px 0 0;text-align:center}
-  #cfgModal .modalCard{padding:16px 18px 20px}
   #cfgModal .modalHd{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
-  #cfgTitle{font-size:16px;font-weight:700}
+  #cfgTitle{font-size:17px;font-weight:700}
+  #cfgModal .modalCard{overflow-y:auto;padding:max(14px,env(safe-area-inset-top)) 18px 20px}
   .cfgGroup{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 14px;margin-bottom:12px}
   .cfgGroup:last-of-type{margin-bottom:0}
   .cfgSection{font-size:14px;font-weight:700;color:var(--ink);padding:12px 0 4px}
