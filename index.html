@@ -84,7 +84,7 @@
   .modalCard{width:100%;max-width:460px;max-height:92vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
   .modalHd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
   #modalTitle{font-size:15px;font-weight:700}
-  #modalClose{background:none;border:0;color:var(--sub);font-size:18px;padding:4px 8px}
+  #modalClose,#cfgClose{background:none;border:0;color:var(--sub);font-size:18px;padding:4px 8px}
   .cols{display:flex;gap:8px}
   .col{flex:1;min-width:0}
   .colHd{text-align:center;font-size:12px;font-weight:700;padding:3px 0;border-bottom:1px solid var(--line);margin-bottom:4px}
@@ -92,16 +92,23 @@
   .stitem{display:block;width:100%;text-align:center;font-size:13px;font-weight:600;color:var(--ink);
     background:#222226;border:1px solid var(--line);border-radius:7px;padding:5px 4px;margin-bottom:3px;white-space:nowrap;overflow:hidden}
   .meta{font-size:11px;color:var(--hint);margin:2px 0 0;text-align:center}
-  .cfgRow{display:flex;align-items:center;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--line)}
-  .cfgRow:last-child{border-bottom:none}
-  .cfgLabel{font-size:14px;font-weight:600;color:var(--ink)}
-  .cfgSel{font-size:14px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 24px 6px 8px;
+  #cfgModal .modalCard{padding:16px 18px 20px}
+  #cfgModal .modalHd{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  #cfgTitle{font-size:16px;font-weight:700}
+  .cfgSection{font-size:11px;font-weight:700;color:var(--grn);text-transform:uppercase;letter-spacing:.08em;
+    padding:14px 0 6px;margin-top:4px;border-top:1px solid var(--line)}
+  .cfgSection:first-of-type{border-top:none;margin-top:0;padding-top:4px}
+  .cfgRow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;gap:12px}
+  .cfgLabel{font-size:13px;font-weight:500;color:var(--sub)}
+  .cfgSel{font-size:14px;font-weight:600;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;
+    padding:7px 28px 7px 10px;min-width:120px;
     -webkit-appearance:none;appearance:none;
-    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><path d='M1 3l5 5 5-5' stroke='%233fcca1' stroke-width='2' fill='none'/></svg>");
-    background-repeat:no-repeat;background-position:right 6px center}
-  .cfgNote{font-size:11px;color:var(--hint);padding:8px 4px 2px;line-height:1.5}
-  .cfgSection{font-size:12px;font-weight:700;color:var(--grn);padding:10px 4px 2px;letter-spacing:.05em}
-  .cfgClear{font-size:13px;font-weight:600;color:var(--toz);background:none;border:1px solid var(--toz);border-radius:8px;padding:6px 14px;margin:10px auto 0;display:block}
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><path d='M1 3l4 4 4-4' stroke='%239b9a96' stroke-width='1.5' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 9px center}
+  .cfgSel:focus{border-color:var(--grn);outline:none}
+  .cfgNote{font-size:11px;color:var(--hint);padding:14px 0 4px;line-height:1.6;border-top:1px solid var(--line);margin-top:10px}
+  .cfgClear{font-size:13px;font-weight:600;color:var(--toz);background:var(--tozbg);border:1px solid var(--toz);
+    border-radius:8px;padding:8px 18px;margin:14px auto 0;display:block;transition:.15s}
   .toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
   .toggle input{opacity:0;width:0;height:0}
   .slider{position:absolute;inset:0;background:var(--bg);border:1px solid var(--line);border-radius:99px;transition:.2s}
